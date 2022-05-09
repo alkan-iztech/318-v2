@@ -46,9 +46,8 @@ class App(db.Model):
     app_type = db.Column(db.String(50), nullable=False)
     color = db.Column(db.String(50))
 
-    def __init__(self, name, user_id, first_item_id, app_type, color='#4285f4'):
-        self.user_id = user_id
-        self.first_item_id = first_item_id
+    def __init__(self, name, app_type, color='#4285f4'):
+        self.name = name
         self.app_type = app_type
         self.color = color
     
@@ -191,14 +190,58 @@ def login():
 def logout():
     return custom_message('Logged out', 200)
 
+@app.route('/apps/new', methods=['GET', 'POST'])
+def new_app():
+    if request.method == 'GET':
+        return render_template('new-app.html')
+    else:
+        try:
+            name = request.form['name']
+            app_type = request.form['type']
+            app_color = request.form['color'] if request.form['color'] else '#4285f4'
+            the_app = App(name, app_type, app_color)
+            db.session.add(the_app)
+            db.session.commit()
+            print('created app:', the_app)
+            return custom_message({'id': the_app.id, 'name': the_app.name, 'type': the_app.app_type, 'color': the_app.color}, 200)
+        except Exception as e:
+            return custom_message({'message': e}, 404)
+
+@app.route('/apps/update', methods=['GET', 'POST'])
+def update_app():
+    if request.method == 'GET':
+        return render_template('update-app.html')
+    else:
+        app_color = request.form['color'] if request.form['color'] else '#4285f4'
+        id = request.form['id']
+        the_app = App.query.filter(App.id == id).first()
+        if the_app:
+            the_app.color = app_color
+            db.session.commit()
+            return custom_message({'id': the_app.id, 'name': the_app.name, 'type': the_app.app_type, 'color': the_app.color}, 200)
+        else:
+            return custom_message({'msg': f'App with {id} is not found.'}, 404)
+
+@app.route('/apps/delete/<int:id>', methods=['GET'])
+def delete_app(id):
+    the_app = App.query.filter(App.id == id).first()
+    if not the_app:
+        return custom_message({'msg': f'App with id {id} is not found.'}, 404)
+    else:
+        App.query.filter(App.id == id).delete()
+        db.session.commit()
+        return custom_message({'msg': f'App with id {id} is deleted.'}, 200)
+
 @app.route('/apps')
 def get_apps():
     apps = App.query.all()
     apps_map = {}
     for cur_app in apps:
         res = {}
+        res['id'] = cur_app.id
         res['name'] = cur_app.name
         res['type'] = cur_app.app_type
+        res['color'] = cur_app.color
         apps_map[cur_app.id] = res
         # apps_map[cur_app.id] = cur_app.name
     return custom_message(apps_map, 200)
