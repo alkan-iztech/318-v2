@@ -4,13 +4,15 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 from validators import validate_user_data
 from numpy import load
-import shutil
+from flask_cors import CORS
+# import shutil
 
 app = Flask(__name__)
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_TYPE'] = "filesystem"
 app.debug = True
 Session(app)
+CORS(app)
 
 GET_REC_ENV = os.environ.get("THREE_ONE_EIGHT_ENV")
 if GET_REC_ENV == 'prod':
