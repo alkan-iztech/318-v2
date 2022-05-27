@@ -145,7 +145,7 @@ class FavoriteGames(db.Model):
 ###########################
 @app.route('/')
 def home():
-    return make_response({'home': 'HOME'}, 200)
+    return "<h1>Welcome to GetRec!</h1>"
 
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -431,6 +431,32 @@ def clear_favs():
     FavoriteMovies.query.delete()
     db.session.commit()
     return custom_message('Favorites data has been cleared.', 200)
+
+
+@app.route('/items-starting-with', methods=['POST'])
+def get_books_starting_with():
+    content = request.get_json(silent=True)
+    query = content['query']
+    item_type = content['type']
+    if item_type == 'book':
+        books = Book.query\
+            .filter(Book.title.startswith(query))\
+            .limit(5)
+        books = list(map(lambda b: b.title, books))
+        return custom_message(books, 200)
+    elif item_type == 'movie':
+        movies = Movie.query\
+            .filter(Movie.title.startswith(query))\
+            .limit(5)
+        movies = list(map(lambda m: m.title, movies))
+        return custom_message(movies, 200)
+    elif item_type == 'game':
+        games = Game.query\
+            .filter(Game.title.startswith(query))\
+            .limit(5)
+        games = list(map(lambda g: g.title, games))
+        return custom_message(games, 200)
+    return custom_message(f'Type "{item_type}" does not exist.', 404)
 
 def custom_message(message, status_code): 
     return make_response(jsonify(message), status_code)
